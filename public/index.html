@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhoneValidator Pro - Bulk Real-Time Validator Dashboard</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="index.css">
+  <!-- Cloudflare Turnstile API -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad" async defer></script>
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <!-- Header -->
+    <header class="dashboard-header">
+      <div class="brand">
+        <div class="brand-logo">PV</div>
+        <div class="brand-text">
+          <h1>PhoneValidator Pro</h1>
+          <p class="subtitle">Bulk Real-Time Validator Dashboard</p>
+        </div>
+      </div>
+      <div class="api-status">
+        <span class="status-dot"></span>
+        <span class="status-label">API Configured</span>
+      </div>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="dashboard-grid">
+      <!-- COLUMN 1: Inputs (Left) -->
+      <aside class="col-left">
+        <section class="card form-card">
+          <div class="card-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            <h2>Enter Phone Numbers</h2>
+          </div>
+          <div class="card-body">
+            <!-- Batch Name -->
+            <div class="form-group">
+              <label for="batch-name">Batch Name (Optional)</label>
+              <input id="batch-name" type="text" placeholder="Batch Run" value="Batch Run" />
+            </div>
+
+            <!-- Request Pacing Delay -->
+            <div class="form-group">
+              <label for="request-delay">Request Pacing Delay</label>
+              <select id="request-delay">
+                <option value="0">0 Seconds (Ultra Fast)</option>
+                <option value="1000">1 Second (Very Fast)</option>
+                <option value="2500">2.5 Seconds (Fast)</option>
+                <option value="4000">4 Seconds</option>
+                <option value="6000" selected>6 Seconds (Recommended)</option>
+                <option value="8000">8 Seconds</option>
+                <option value="10000">10 Seconds (Safe)</option>
+              </select>
+            </div>
+
+            <!-- Numbers Area -->
+            <div class="form-group">
+              <label for="phones-input">Multiple Numbers (One per line or comma-separated)</label>
+              <textarea id="phones-input" placeholder="e.g.&#10;2052660831&#10;2078242589&#10;2083367400" rows="8"></textarea>
+            </div>
+
+            <!-- Turnstile Panel wrapper -->
+            <div class="turnstile-panel">
+              <span class="field-label">Verification Widget</span>
+              <div id="turnstile-widget"></div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="actions-row">
+              <button id="btn-start" class="btn btn-primary" style="flex: 1.5;" disabled>
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                <span id="start-btn-text">Start</span>
+              </button>
+              <button id="btn-pause" class="btn btn-secondary hidden" style="background: #fff7ed; border-color: #fed7aa; color: #c2410c; flex: 1.5;">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="6" y="4" width="4" height="16"/>
+                  <rect x="14" y="4" width="4" height="16"/>
+                </svg>
+                <span>Pause</span>
+              </button>
+              <button id="btn-stop" class="btn btn-secondary hidden" style="background: #fef2f2; border-color: #fca5a5; color: #dc2626; flex: 1.2;">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="4" width="16" height="16"/>
+                </svg>
+                <span>Stop</span>
+              </button>
+              <button id="btn-clear" class="btn btn-secondary" style="flex: 1;">Clear</button>
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <!-- COLUMN 2: Stats & Live Records (Middle) -->
+      <section class="col-middle">
+        <!-- Summary statistics row (5 tiles) -->
+        <div class="stats-row">
+          <!-- Total -->
+          <div class="stat-tile total">
+            <span class="tile-title">TOTAL NUMBERS</span>
+            <span class="tile-value" id="tile-total">0</span>
+          </div>
+          <!-- Remaining -->
+          <div class="stat-tile remaining">
+            <span class="tile-title">REMAINING</span>
+            <span class="tile-value" id="tile-remaining">0</span>
+          </div>
+          <!-- Processed -->
+          <div class="stat-tile processed">
+            <span class="tile-title">PROCESSED</span>
+            <span class="tile-value" id="tile-processed">0</span>
+          </div>
+          <!-- Cell Phones -->
+          <div class="stat-tile cell-phones">
+            <span class="tile-title">CELL PHONES</span>
+            <span class="tile-value" id="tile-cells">0</span>
+          </div>
+          <!-- Fake Numbers -->
+          <div class="stat-tile fake-numbers">
+            <span class="tile-title">FAKE NUMBERS</span>
+            <span class="tile-value" id="tile-fakes">0</span>
+          </div>
+        </div>
+
+        <!-- Live Records Table -->
+        <section class="card table-card">
+          <div class="card-header">
+            <div class="header-left">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+              <h2>Live Records Table</h2>
+            </div>
+            <div class="header-right">
+              <input id="table-filter" type="text" placeholder="Filter by number / type..." />
+              <button id="btn-export" class="btn btn-secondary">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Export CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body no-padding">
+            <div class="table-responsive">
+              <table id="results-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Phone Number</th>
+                    <th>Line Type</th>
+                    <th>Deliverable</th>
+                    <th>SMS Eligible</th>
+                    <th>Action Type</th>
+                    <th>Fake Number</th>
+                    <th>Validation Status</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="results-body">
+                  <tr class="empty-state">
+                    <td colspan="9">No phone numbers analyzed yet. Input numbers and verify to begin.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- COLUMN 3: API Key & History (Right) -->
+      <aside class="col-right">
+
+
+        <!-- Validation History -->
+        <section class="card history-card">
+          <div class="card-header flex-header">
+            <div class="header-left">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+              <h2>Validation History</h2>
+            </div>
+            <button id="btn-clear-history" class="btn-sm-text">Clear All</button>
+          </div>
+          <div class="card-body no-padding history-body">
+            <div id="history-list" class="history-list">
+              <!-- Rendered Dynamically -->
+              <p class="history-empty">No validation history yet.</p>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <!-- Detail Drawer Overlay -->
+    <div id="detail-drawer" class="drawer-overlay hidden">
+      <div class="drawer-content">
+        <div class="drawer-header">
+          <div>
+            <h3 id="drawer-phone-title">Phone Validation Details</h3>
+            <p class="subtitle" id="drawer-phone-subtitle">Real-time intelligence report</p>
+          </div>
+          <button id="btn-close-drawer" class="btn-close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="drawer-body">
+          <!-- Summary Tiles -->
+          <div class="drawer-summary-grid">
+            <div class="summary-tile">
+              <span class="tile-label">Line Type</span>
+              <span class="tile-val" id="detail-line-type">-</span>
+            </div>
+            <div class="summary-tile">
+              <span class="tile-label">Carrier</span>
+              <span class="tile-val" id="detail-carrier">-</span>
+            </div>
+            <div class="summary-tile" id="tile-tcpa">
+              <span class="tile-label">TCPA Litigator</span>
+              <span class="tile-val" id="detail-tcpa">-</span>
+            </div>
+            <div class="summary-tile">
+              <span class="tile-label">SMS Eligibility</span>
+              <span class="tile-val" id="detail-sms">-</span>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="tabs-container">
+            <div class="tabs-header">
+              <button class="tab-btn active" data-tab="tab-intelligence">Carrier & Location</button>
+              <button class="tab-btn" data-tab="tab-raw">Raw API Response</button>
+            </div>
+
+            <!-- Tab: Intelligence -->
+            <div id="tab-intelligence" class="tab-pane active">
+              <div class="detail-section">
+                <h4>Carrier Network Info</h4>
+                <div class="info-list">
+                  <div class="info-row"><span class="lbl">Deliverability</span><span class="val" id="detail-deliverable">-</span></div>
+                  <div class="info-row"><span class="lbl">Carrier Name</span><span class="val" id="detail-carrier-name">-</span></div>
+                  <div class="info-row"><span class="lbl">Carrier Subtype</span><span class="val" id="detail-subtype">-</span></div>
+                  <div class="info-row"><span class="lbl">OCN Code</span><span class="val" id="detail-ocn">-</span></div>
+                  <div class="info-row"><span class="lbl">LRN (Routing Number)</span><span class="val" id="detail-lrn">-</span></div>
+                  <div class="info-row"><span class="lbl">Ported Status</span><span class="val" id="detail-ported">-</span></div>
+                </div>
+              </div>
+
+              <div class="detail-section">
+                <h4>Geographic Details</h4>
+                <div class="info-list">
+                  <div class="info-row"><span class="lbl">State/Region</span><span class="val" id="detail-region">-</span></div>
+                  <div class="info-row"><span class="lbl">City</span><span class="val" id="detail-city">-</span></div>
+                  <div class="info-row"><span class="lbl">County</span><span class="val" id="detail-county">-</span></div>
+                  <div class="info-row"><span class="lbl">Timezone</span><span class="val" id="detail-timezone">-</span></div>
+                  <div class="info-row"><span class="lbl">Zip Code</span><span class="val" id="detail-zip">-</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab: Raw Response -->
+            <div id="tab-raw" class="tab-pane">
+              <div class="code-wrapper">
+                <pre><code id="detail-raw-code" class="json-code">{}</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="index.js"></script>
+</body>
+</html>

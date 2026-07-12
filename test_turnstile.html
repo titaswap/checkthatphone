@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Turnstile Test</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+<body>
+  <h1>Cloudflare Turnstile Test</h1>
+  <div class="cf-turnstile" data-sitekey="0x4AAAAAADrGEecQvx6k5_Vl" data-callback="onloadCallback"></div>
+  <p id="token-display">Waiting for token...</p>
+
+  <script>
+    function onloadCallback(token) {
+      console.log("Token received:", token);
+      document.getElementById("token-display").innerText = "Token: " + token;
+    }
+  </script>
+</body>
+</html>

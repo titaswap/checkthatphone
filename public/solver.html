@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Turnstile Token Generator</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad" async defer></script>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      --bg-card: #ffffff;
+      --border-color: #e2e8f0;
+      --color-primary: #2563eb;
+      --color-teal: #0f766e;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      text-align: center;
+      padding: 0;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+    }
+    .card {
+      background: var(--bg-card);
+      padding: 40px 30px;
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+      max-width: 440px;
+      width: 90%;
+      box-sizing: border-box;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    p {
+      color: var(--text-muted);
+      font-size: 13.5px;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+    #turnstile-widget {
+      display: inline-block;
+      margin: 15px 0;
+    }
+    .status {
+      margin-top: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-teal);
+      padding: 8px 16px;
+      background: #f0fdfa;
+      border: 1px solid #ccfbf1;
+      border-radius: 8px;
+      display: inline-block;
+      min-width: 200px;
+    }
+    .counter {
+      margin-top: 15px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Turnstile Token Feeder</h2>
+    <p>Keep this tab open in your browser to feed Cloudflare tokens to your terminal CLI script.</p>
+    <div id="turnstile-widget"></div>
+    <div>
+      <div class="status" id="status">Waiting for Turnstile...</div>
+      <div class="counter" id="counter">Tokens generated during this session: 0</div>
+    </div>
+  </div>
+  <script>
+    let widgetId = null;
+    let tokenCount = 0;
+
+    // Get workerId from URL query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const workerId = urlParams.get('workerId') || 'default';
+
+    window.onTurnstileLoad = function() {
+      document.getElementById('status').innerText = 'Ready. Waiting to load...';
+
+      // Stagger initial solve across tabs so they don't all fire at once.
+      // Tab 1 starts at 0s, Tab 2 at 3s, Tab 3 at 6s... up to Tab 10 at 27s.
+      // This prevents a burst of 10 simultaneous solves which triggers Cloudflare throttling.
+      const tabNum = parseInt(urlParams.get('tab') || '1', 10);
+      const staggerDelay = (tabNum - 1) * 3000;
+
+      setTimeout(() => {
+        document.getElementById('status').innerText = 'Loading widget...';
+        widgetId = turnstile.render('#turnstile-widget', {
+          sitekey: '0x4AAAAAADrGEecQvx6k5_Vl',
+          callback: async function(token) {
+            document.getElementById('status').innerText = 'Sending token...';
+            try {
+              const res = await fetch('/api/submit-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, userAgent: navigator.userAgent, workerId })
+              });
+              if (res.ok) {
+                tokenCount++;
+                document.getElementById('status').innerText = 'Token accepted!';
+                document.getElementById('counter').innerText = `Tokens generated during this session: ${tokenCount}`;
+              } else {
+                document.getElementById('status').innerText = 'Failed to submit token.';
+              }
+            } catch(e) {
+              document.getElementById('status').innerText = 'Server offline, retrying...';
+            }
+            // Reset Turnstile to solve again — 4.5s delay to avoid Cloudflare rate-limiting the solver
+            setTimeout(() => {
+              document.getElementById('status').innerText = 'Requesting fresh token...';
+              turnstile.reset(widgetId);
+            }, 4500);
+          }
+        });
+      }, staggerDelay);
+    };
+  </script>
+</body>
+</html>

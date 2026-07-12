@@ -1,0 +1,11 @@
+{
+  "useProxies": true,
+  "concurrency": 10,
+  "pacingDelay": 1,
+  "maxRetries": 100,
+  "retryDelay": 1,
+  "browserSolvers": 2,
+  "solverTabs": 5,
+  "prewarmTokens": 20,
+  "proxyIpCooldown": 15
+}

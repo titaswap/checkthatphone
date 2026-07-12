@@ -1,0 +1,14 @@
+{
+  "name": "checkthatphone-demo-app",
+  "version": "1.0.0",
+  "description": "Phone lookup batch processing application utilizing checkthatphone.com demo API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "node-fetch": "^2.7.0",
+    "proxy-agent": "^8.0.2"
+  }
+}
