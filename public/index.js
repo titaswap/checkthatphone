@@ -15,7 +15,7 @@ const HISTORY_STORAGE_KEY = 'phone_validator_history';
 window.onTurnstileLoad = function() {
   try {
     turnstileWidgetId = turnstile.render('#turnstile-widget', {
-      sitekey: '0x4AAAAAAD0fzbjM5VcA6--g',
+      sitekey: '0x4AAAAAADrGEecQvx6k5_Vl',
       callback: function(token) {
         currentToken = token;
         if (!isProcessing) {
